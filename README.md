@@ -1,1 +1,1 @@
-# BurningFirday
+# BurningFriday
