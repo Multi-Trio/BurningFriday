@@ -1,0 +1,64 @@
+#include <CS_MQ7.h>
+
+//////////////////////////////////////////////////////////////////
+//각 모듈 전역변수////////////////////////////////////////////////
+
+//CO sensor
+int sensorValue;
+
+ //blue tooth module
+#include <SoftwareSerial.h> 
+SoftwareSerial BTSerial(3, 2);
+ 
+//Dust senser
+int pin = 8;
+unsigned long duration;
+unsigned long starttime;
+unsigned long sampletime_ms = 500;//sample 0.5s ;
+unsigned long lowpulseoccupancy = 0;
+float ratio = 0;
+float concentration = 0;
+
+//////////////////////////////////////////////////////////////////
+
+void setup() {
+  Serial.begin(9600); //PC와 연결 
+  BTSerial.begin(9600); //블루투스 연결
+  pinMode(8, INPUT);
+  starttime = millis();//get the current time;
+}
+
+void loop() {
+  //블루투스 메소드 
+  if (BTSerial.available())
+    Serial.write(BTSerial.read());
+  if (Serial.available())
+    BTSerial.write(Serial.read());
+    
+  //Dust censor
+  duration = pulseIn(pin, LOW);
+  lowpulseoccupancy = lowpulseoccupancy + duration;
+
+  if ((millis() - starttime) > sampletime_ms) //if the sampel time == 30s
+  {
+    ratio = lowpulseoccupancy / (sampletime_ms * 10.0); // Integer percentage 0=>100
+    concentration = 1.1 * pow(ratio, 3) - 3.8 * pow(ratio, 2) + 520 * ratio + 0.62; // using spec sheet curve
+    Serial.print("lowpulseoccupancy: ");
+    Serial.println(lowpulseoccupancy);
+    Serial.println("");
+    Serial.print("ratio: ");
+    Serial.println(ratio);
+    Serial.println("");
+    Serial.print("concentration: ");
+    Serial.println(concentration);
+
+    
+  //CO sensor
+  sensorValue = analogRead(0);
+  Serial.println(sensorValue, DEC);
+
+  
+    lowpulseoccupancy = 0;
+    starttime = millis();
+  }
+}
